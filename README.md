@@ -5,10 +5,10 @@ z przedmiotu **Cyberbezpieczeństwo**.
 
 ## Struktura
 
-| Katalog        | Data       | Temat |
-|----------------|------------|-------|
-| `lab1 5.10`    | 05.10.2026 | Path Traversal (CWE-22) |
-| `lab2 12.10`   | 12.10.2026 | — |
+| Katalog             | Data       | Temat |
+|---------------------|------------|-------|
+| `lab1_2026-10-05`   | 05.10.2026 | Path Traversal (CWE-22) |
+| `lab2_2026-10-12`   | 12.10.2026 | — |
 
 ## Uwagi
 
