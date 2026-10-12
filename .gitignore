@@ -1,0 +1,20 @@
+# Łupy i artefakty z ćwiczeń
+*.zip
+loot/
+/tmp/
+
+# System
+.DS_Store
+Thumbs.db
+
+# Edytory
+.vscode/
+.idea/
+*.swp
+*~
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
