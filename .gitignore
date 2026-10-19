@@ -18,3 +18,4 @@ __pycache__/
 *.pyc
 venv/
 .venv/
+lab3_2026_10_19/3.6/jwt.secrets.list
