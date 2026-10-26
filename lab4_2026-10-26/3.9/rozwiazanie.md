@@ -101,6 +101,28 @@ podpis policzono **tym samym sekretem**, którego serwer używa do weryfikacji
 (zły sekret) daje 401. jwt.io nadaje się do podrabiania tylko przy **znanym,
 niepustym** sekrecie (np. jak w zad. 3.6).
 
+## Częsta pułapka — „zmień payload, zostaw stary podpis"
+Intuicja: skoro sekret jest „wyłączony", to może wystarczy wziąć oryginalny
+token, zmienić w nim sam payload (`userId:1`) i zostawić stary podpis — bez
+liczenia czegokolwiek. **Tu to NIE działa** i sprawdziliśmy to: taka podmiana
+daje **401**.
+
+Dlaczego:
+- Poprawny podpis zależy od **treści**: dla zmienionego payloadu serwer liczy
+  `HMAC("", nowy_header.nowy_payload)`, co daje **inny** wynik niż stary podpis.
+  Stary podpis pasuje tylko do **starego** payloadu.
+- Watcharr **weryfikuje** podpis (udowodnione: tamper + stary podpis → 401), więc
+  trzeba **przeliczyć** podpis — choćby kluczem pustym. A to wymaga narzędzia
+  (`forge.py` / `pyjwt` / `jwt_tool`), nie samego „sklejenia w notatniku".
+
+Kiedy który sposób działa:
+
+| Sytuacja | „Zmień payload, zostaw podpis" | Trzeba przeliczyć podpis |
+|----------|:---:|:---:|
+| serwer **nie weryfikuje** podpisu (np. 3.5 `/noverify`, `alg:none` w 3.7) | ✅ działa | — |
+| serwer **weryfikuje**, sekret **pusty** (Watcharr) | ❌ 401 | ✅ `forge.py` (pusty klucz) |
+| serwer **weryfikuje**, sekret **słaby** (np. 3.6 `secret1`) | ❌ 401 | ✅ jwt.io / pyjwt (znany sekret) |
+
 ## k) CVSS (propozycja)
 Nieuwierzytelniony/niskouprawniony → pełne przejęcie admina:
 `CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H` ≈ **8.8 (High)**
