@@ -76,6 +76,19 @@ admin) i podszyć się pod administratora, uzyskując pełną kontrolę nad serw
 - Dodatkowo autoryzować akcje admina po stronie serwera niezależnie od `userId`
   z tokena (defence in depth).
 
+## Obserwacja — dlaczego liczy się sekret, nie payload (test jwt.io)
+Próba podrobienia tokena na **jwt.io**: zmiana `userId: 2 → 1` i podpisanie.
+- jwt.io **blokuje pusty sekret** („Secret must not be empty"), więc dla pustego
+  sekretu Watcharr nie da się tam dokończyć — stąd `forge.py`.
+- Podpisanie na jwt.io **innym** (niepustym) sekretem `a-string-secret-...` i
+  wysłanie do serwera → **401 Unauthorized**.
+
+**Wniosek:** sama zmiana payloadu nie wystarczy — token jest ważny tylko gdy
+podpis policzono **tym samym sekretem**, którego serwer używa do weryfikacji
+(tu: pusty `""`). To dlatego `forge.py` (pusty sekret) daje 200, a jwt.io
+(zły sekret) daje 401. jwt.io nadaje się do podrabiania tylko przy **znanym,
+niepustym** sekrecie (np. jak w zad. 3.6).
+
 ## k) CVSS (propozycja)
 Nieuwierzytelniony/niskouprawniony → pełne przejęcie admina:
 `CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H` ≈ **8.8 (High)**

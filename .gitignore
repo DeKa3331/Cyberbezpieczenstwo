@@ -18,5 +18,5 @@ __pycache__/
 *.pyc
 venv/
 .venv/
-lab3_2026_10_19/3.6/jwt.secrets.list
+lab3_2026-10-19/3.6/jwt.secrets.list
 lab4_2026-10-26/data/
