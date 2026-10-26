@@ -83,6 +83,18 @@ Próba podrobienia tokena na **jwt.io**: zmiana `userId: 2 → 1` i podpisanie.
 - Podpisanie na jwt.io **innym** (niepustym) sekretem `a-string-secret-...` i
   wysłanie do serwera → **401 Unauthorized**.
 
+Token studenta zdekodowany na jwt.io (`userId:2`):
+
+![jwt.io — dekodowanie tokena studenta](screeny/05_jwtio_decode_student.png)
+
+Po zmianie `userId: 1` jwt.io odmawia podpisania pustym sekretem:
+
+![jwt.io — "Secret must not be empty"](screeny/06_jwtio_pusty_sekret_blokada.png)
+
+Token podpisany na jwt.io złym (niepustym) sekretem → serwer zwraca 401:
+
+![Burp — token z jwt.io odrzucony (401)](screeny/07_jwtio_zly_sekret_401.png)
+
 **Wniosek:** sama zmiana payloadu nie wystarczy — token jest ważny tylko gdy
 podpis policzono **tym samym sekretem**, którego serwer używa do weryfikacji
 (tu: pusty `""`). To dlatego `forge.py` (pusty sekret) daje 200, a jwt.io
