@@ -20,3 +20,6 @@ venv/
 .venv/
 lab3_2026-10-19/3.6/jwt.secrets.list
 lab4_2026-10-26/data/
+lab5_2026-11-09/bookstack_app_data/
+lab5_2026-11-09/bookstack_db_data/
+lab5_2026-11-09/ssh_config/
