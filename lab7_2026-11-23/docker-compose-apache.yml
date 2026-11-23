@@ -1,0 +1,30 @@
+services:
+  # Attacker Machine: Metasploit
+  metasploit:
+    image: docker.io/mazurkatarzyna/metasploit:latest
+    container_name: metasploit
+    hostname: attacker
+    stdin_open: true
+    tty: true
+    networks:
+      apache-lab:
+        ipv4_address: 10.10.12.3
+    depends_on:
+      - apache
+  apache:
+    container_name: apache_server
+    image: docker.io/mazurkatarzyna/cve-2021-42013:latest
+    ports:
+      - "8081:80"
+      - "8443:443"
+    networks:
+      apache-lab:
+        ipv4_address: 10.10.12.2
+networks:
+  apache-lab:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.10.12.0/24
+          gateway: 10.10.12.1

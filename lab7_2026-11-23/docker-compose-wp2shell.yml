@@ -1,0 +1,103 @@
+# Vulnerable WordPress target for CVE-2026-63030 + CVE-2026-60137 (wp2shell)
+# FOR ISOLATED LAB USE ONLY — do not expose this to the internet.
+#
+# WordPress 6.9.4 is in the full-RCE-chain affected range (6.9.0–6.9.4).
+# Fixed releases are 6.9.5 / 7.0.2 — do NOT use those if you want it vulnerable.
+#
+# Static IPs on a dedicated /24. If this subnet clashes with a Docker network or
+# your VPN, change it in ONE place (the ipam block) and update every 10.13.37.x
+# reference below to match.
+#   gateway    10.13.37.1
+#   wordpress  10.13.37.10   <- attacker targets this (RHOSTS)
+#   mariadb    10.13.37.20
+#   wp-cli     10.13.37.30   (one-shot installer, exits when done)
+#
+# The site URL is pinned to the WordPress IP, so the attacker hitting
+# http://10.13.37.10 gets no canonical redirect. Install + permalinks are done
+# headlessly by the wp-cli service, so /wp-json/ works the moment it finishes.
+
+services:
+  db:
+    image: docker.io/mazurkatarzyna/wp2shell-mysql
+    environment:
+      MARIADB_ROOT_PASSWORD: labrootpass
+      MARIADB_DATABASE: wordpress
+      MARIADB_USER: wordpress
+      MARIADB_PASSWORD: wordpress
+    networks:
+      labnet:
+        ipv4_address: 10.13.37.20
+
+  wordpress:
+    image: docker.io/mazurkatarzyna/wp2shell-wp
+    depends_on:
+      - db
+    # Handy on Linux (bridge is routable); on macOS/Windows use the IP from a
+    # container on labnet instead, since the host can't reach 10.13.37.10 directly.
+    ports:
+      - "127.0.0.1:8080:80"
+    volumes:
+      - /var/www/html
+    environment:
+      WORDPRESS_DB_HOST: 10.13.37.20:3306
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_CONFIG_EXTRA: |
+        define('WP_HOME',    'http://10.13.37.10');
+        define('WP_SITEURL', 'http://10.13.37.10');
+        define('WP_AUTO_UPDATE_CORE', false);
+    networks:
+      labnet:
+        ipv4_address: 10.13.37.10
+
+  # One-shot: waits for WP files + DB, installs headlessly, enables pretty
+  # permalinks (so /wp-json/ resolves), ensures a published post exists, exits.
+  wp-cli:
+    image: docker.io/mazurkatarzyna/wp2shell-wpcli
+    depends_on:
+      - db
+      - wordpress
+    user: root
+    volumes_from:
+      - wordpress
+    environment:
+      WORDPRESS_DB_HOST: 10.13.37.20:3306
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress
+    networks:
+      labnet:
+        ipv4_address: 10.13.37.30
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        echo "waiting for wp-config.php..."
+        until [ -f /var/www/html/wp-config.php ]; do sleep 2; done
+        echo "installing WordPress (retries until DB is ready)..."
+        until wp core is-installed --allow-root >/dev/null 2>&1; do
+          wp core install --allow-root \
+            --url="http://10.13.37.10" \
+            --title="wp2shell lab" \
+            --admin_user="admin" \
+            --admin_password="admin123" \
+            --admin_email="example@example.com" \
+            --skip-email >/dev/null 2>&1 || sleep 3
+        done
+        wp rewrite structure '/%postname%/' --hard --allow-root
+        wp rewrite flush --hard --allow-root
+        if [ "$(wp post list --post_status=publish --format=count --allow-root)" = "0" ]; then
+          wp post create --post_title="lab post" --post_content="lab" --post_status=publish --allow-root
+        fi
+        echo "LAB READY -> http://10.13.37.10  (REST: /wp-json/ , admin: admin/admin123)"
+
+networks:
+  labnet:
+    name: labnet
+    driver: bridge
+    # Flip to true to cut the target off from the internet once installed.
+    internal: false
+    ipam:
+      config:
+        - subnet: 10.13.37.0/24
+          gateway: 10.13.37.1

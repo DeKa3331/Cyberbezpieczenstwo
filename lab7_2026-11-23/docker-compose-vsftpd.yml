@@ -1,0 +1,38 @@
+services:
+  # Attacker Machine: Metasploit
+  metasploit:
+    image: docker.io/mazurkatarzyna/metasploit:latest
+    container_name: metasploit
+    hostname: attacker
+    stdin_open: true
+    tty: true
+    networks:
+      vsftpd-lab:
+        ipv4_address: 10.10.11.3
+    depends_on:
+      - vsftpd
+  vsftpd:
+    container_name: vsftpd_server
+    restart: unless-stopped
+    image: docker.io/mazurkatarzyna/vsftpd.2.3.4:latest
+    ports:
+      - "2020:20"
+      - "2121:21"
+      - "21100-21110:21100-21110"
+    environment: 
+      PASV_ADDRESS: 127.0.0.1
+      PASV_MIN_PORT: 21100
+      PASV_MAX_PORT: 21110
+    volumes:
+      - ./ftp_data:/home/vsftpd
+    networks:
+      vsftpd-lab:
+        ipv4_address: 10.10.11.2
+networks:
+  vsftpd-lab:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.10.11.0/24
+          gateway: 10.10.11.1

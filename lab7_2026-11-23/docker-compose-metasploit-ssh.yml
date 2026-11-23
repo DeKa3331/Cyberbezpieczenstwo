@@ -1,0 +1,72 @@
+services:
+  # Target 1: Weak Credentials
+  ssh-weak:
+    image: docker.io/mazurkatarzyna/ssh-weak:latest
+    container_name: ssh-weak
+    hostname: ssh-weak
+    networks:
+      ssh-lab:
+        ipv4_address: 10.10.10.10
+
+  # Target 2: CVE-2018-15473 User Enumeration
+  ssh-enum:
+    image: docker.io/mazurkatarzyna/ssh-enum:latest
+    container_name: ssh-enum
+    hostname: ssh-enum
+    networks:
+      ssh-lab:
+        ipv4_address: 10.10.10.11
+
+  # Target 3: Old SSH Version
+  ssh-old:
+    image: docker.io/mazurkatarzyna/ssh-old:latest
+    container_name: ssh-old
+    hostname: ssh-old
+    networks:
+      ssh-lab:
+        ipv4_address: 10.10.10.12
+
+  # Target 4: libssh CVE-2018-10933 Auth Bypass
+  ssh-libssh:
+    image: docker.io/mazurkatarzyna/ssh-libssh:latest
+    container_name: ssh-libssh
+    hostname: ssh-libssh
+    networks:
+      ssh-lab:
+        ipv4_address: 10.10.10.13
+
+  # Target 5: Debian Weak Keys CVE-2008-0166
+  ssh-debian:
+    image: docker.io/mazurkatarzyna/ssh-weak-keys:latest
+    container_name: ssh-debian
+    hostname: ssh-debian
+    networks:
+      ssh-lab:
+        ipv4_address: 10.10.10.14
+
+  # Attacker Machine: Metasploit
+  metasploit:
+    image: metasploitframework/metasploit-framework:latest
+    container_name: metasploit
+    hostname: attacker
+    stdin_open: true
+    tty: true 
+    networks:
+      ssh-lab:
+        ipv4_address: 10.10.10.5
+    depends_on:
+      - ssh-weak
+      - ssh-enum
+      - ssh-old
+      - ssh-libssh
+      - ssh-debian
+    privileged: true
+
+networks:
+  ssh-lab:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.10.10.0/24
+          gateway: 10.10.10.1
